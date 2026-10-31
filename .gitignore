@@ -1,0 +1,17 @@
+# Bağımlılıklar & Geçici Dosyalar
+node_modules/
+npm-debug.log*
+
+# Çalışma Zamanı Veritabanı & Oturumlar
+data/*.sqlite
+data/*.sqlite-wal
+data/*.sqlite-shm
+data/baileys_auth*
+
+# Ortam Değişkenleri & Gizli Anahtarlar
+.env
+config/google_credentials.json
+
+# İşletim Sistemi Kalıntıları
+.DS_Store
+Thumbs.db
