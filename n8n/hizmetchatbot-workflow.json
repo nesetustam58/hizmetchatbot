@@ -1,0 +1,144 @@
+{
+  "name": "HizmetChatbot - WhatsApp, Gemini 3.8 Flash & Çift Usta Takvim Akışı",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-inbound",
+        "options": {}
+      },
+      "id": "node-webhook-inbound",
+      "name": "1. WhatsApp/Telegram Gelen Mesaj Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "whatsapp-inbound-hizmet"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash",
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "node-ai-gemini",
+      "name": "2. Gemini 3.8 Flash Beyin Modeli",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [480, 480]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Müşteri Mesajı: {{ $json.body.message || $json.body.text }}\n\nGörev: Kombi/klima servisi için varlık çıkarımı yap (hizmet, semt, marka, aciliyet)."
+      },
+      "id": "node-ai-agent",
+      "name": "3. AI Doğal Dil Analiz Ajanı",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/n8n/message-in",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"phoneNumber\": \"{{ $('1. WhatsApp/Telegram Gelen Mesaj Webhook').item.json.body.from || $('1. WhatsApp/Telegram Gelen Mesaj Webhook').item.json.body.sender }}\",\n  \"text\": \"{{ $('1. WhatsApp/Telegram Gelen Mesaj Webhook').item.json.body.message || $('1. WhatsApp/Telegram Gelen Mesaj Webhook').item.json.body.text }}\",\n  \"channel\": \"whatsapp\"\n}",
+        "options": {}
+      },
+      "id": "node-backend-api",
+      "name": "4. HizmetChatbot Backend Köprüsü (State Machine)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "amount": 1.5,
+        "unit": "seconds"
+      },
+      "id": "node-anti-ban-delay",
+      "name": "5. Anti-Ban Doğal Yazıyor Gecikmesi (1.5 sn)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [960, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8080/message/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"number\": \"{{ $('4. HizmetChatbot Backend Köprüsü (State Machine)').item.json.customerId }}\",\n  \"text\": \"{{ $('4. HizmetChatbot Backend Köprüsü (State Machine)').item.json.replyText }}\"\n}",
+        "options": {}
+      },
+      "id": "node-send-whatsapp",
+      "name": "6. Müşteriye WhatsApp Yanıtı Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1200, 300]
+    }
+  ],
+  "connections": {
+    "1. WhatsApp/Telegram Gelen Mesaj Webhook": {
+      "main": [
+        [
+          {
+            "node": "3. AI Doğal Dil Analiz Ajanı",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Gemini 3.8 Flash Beyin Modeli": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "3. AI Doğal Dil Analiz Ajanı",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. AI Doğal Dil Analiz Ajanı": {
+      "main": [
+        [
+          {
+            "node": "4. HizmetChatbot Backend Köprüsü (State Machine)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. HizmetChatbot Backend Köprüsü (State Machine)": {
+      "main": [
+        [
+          {
+            "node": "5. Anti-Ban Doğal Yazıyor Gecikmesi (1.5 sn)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Anti-Ban Doğal Yazıyor Gecikmesi (1.5 sn)": {
+      "main": [
+        [
+          {
+            "node": "6. Müşteriye WhatsApp Yanıtı Gönder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

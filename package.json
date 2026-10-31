@@ -1,0 +1,25 @@
+{
+  "name": "hizmetchatbot",
+  "version": "1.0.0",
+  "description": "WhatsApp/Telegram tabanlı otonom kombi bakım ve usta yönlendirme servisi",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dashboard": "node src/server.js",
+    "test": "node tests/test-flow.js"
+  },
+  "keywords": [
+    "chatbot",
+    "whatsapp",
+    "telegram",
+    "google-calendar",
+    "kvkk",
+    "clean-code"
+  ],
+  "author": "HizmetChatbot Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

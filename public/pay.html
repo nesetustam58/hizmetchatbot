@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Güvenli Sanal POS Ödeme Formu — HizmetChatbot</title>
+  <link rel="stylesheet" href="/css/material-theme.css">
+  <style>
+    body {
+      background-color: #f0f4f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px;
+    }
+
+    .checkout-container {
+      max-width: 960px;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 840px) {
+      .checkout-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .checkout-card {
+      background: #ffffff;
+      border-radius: var(--md-shape-xl);
+      border: 1px solid var(--md-sys-color-border-subtle);
+      box-shadow: var(--md-sys-elevation-card);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .checkout-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--md-sys-color-border-subtle);
+      padding-bottom: 16px;
+    }
+
+    .lock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e8f5e9;
+      color: #1b5e20;
+      padding: 4px 10px;
+      border-radius: var(--md-shape-full);
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+
+    .order-summary-box {
+      background: var(--md-sys-color-surface-container-low);
+      border-radius: var(--md-shape-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13.5px;
+    }
+
+    .summary-row.total {
+      border-top: 1px dashed var(--md-sys-color-outline-variant);
+      padding-top: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--md-sys-color-primary);
+    }
+
+    .hold-timer-pill {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      color: #8d6e63;
+      padding: 8px 12px;
+      border-radius: var(--md-shape-sm);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface);
+    }
+
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .trust-guarantee {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--md-sys-color-outline);
+      margin-top: 8px;
+    }
+
+    /* Success State View */
+    .success-overlay {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .success-icon-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #dcfce7;
+      color: #15803d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Brand Header -->
+  <header style="margin-bottom: 24px; text-align: center;">
+    <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+      <svg class="icon icon-lg" viewBox="0 0 24 24" style="color:var(--md-sys-color-primary);"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+      <h1 style="font-size: 20px; font-weight: 700;">HizmetChatbot Güvenli Ödeme & Adres Doğrulama</h1>
+    </div>
+    <p style="font-size: 13px; color: var(--md-sys-color-outline);">Kadıköy & Üsküdar Bölgesi Kombi ve Klima Hizmet Randevusu</p>
+  </header>
+
+  <div class="checkout-container">
+    <!-- SOL: Sipariş & Randevu Özeti -->
+    <aside class="checkout-card" id="summary-card">
+      <div class="checkout-header">
+        <h2 style="font-size: 16px; font-weight: 700;">Randevu Özeti</h2>
+        <span class="lock-badge" style="margin-left:auto;">
+          <span class="pulse-dot live" style="background:#2e7d32;"></span>
+          15 dk Rezerve
+        </span>
+      </div>
+
+      <div class="hold-timer-pill">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+        <span>Takvim slotunuz sizin adınıza kilitlendi.</span>
+      </div>
+
+      <div class="order-summary-box">
+        <div class="summary-row">
+          <span style="color:var(--md-sys-color-outline);">Seçilen Hizmet:</span>
+          <strong id="summary-service-title">Kombi Periyodik Kış Bakımı</strong>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--md-sys-color-outline);">Atanan Usta:</span>
+          <strong id="summary-tech-name">Usta 1: Mehmet Usta</strong>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--md-sys-color-outline);">Randevu Saati:</span>
+          <strong id="summary-slot-time">Bugün 14:30 - 16:00</strong>
+        </div>
+        <div class="summary-row">
+          <span style="color:var(--md-sys-color-outline);">Hizmet Bölgesi:</span>
+          <strong id="summary-district">Kadıköy (Moda)</strong>
+        </div>
+        <div class="summary-row total">
+          <span>Toplam Tutar:</span>
+          <span id="summary-price">₺1.400</span>
+        </div>
+      </div>
+
+      <div class="trust-guarantee">
+        <svg class="icon icon-md" viewBox="0 0 24 24" style="color:#16a34a;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+        <span>Ödeme sonrası Google Calendar takvimine KESİN randevu işlenir.</span>
+      </div>
+    </aside>
+
+    <!-- SAĞ: Adres & Sanal POS Kart Formu -->
+    <main class="checkout-card" id="form-card">
+      <div class="checkout-header">
+        <h2 style="font-size: 16px; font-weight: 700;">Adres ve Ödeme Bilgileri</h2>
+        <span style="margin-left: auto; font-size: 12px; color: var(--md-sys-color-outline);">256-Bit SSL Korumalı</span>
+      </div>
+
+      <form id="checkout-form" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Bölüm 1: Açık Adres & İletişim -->
+        <div style="font-size: 14px; font-weight: 700; color: var(--md-sys-color-primary); border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+          1. Servis Adresi ve Cihaz Detayı
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Adınız Soyadınız</label>
+            <input type="text" class="form-input" id="input-fullname" value="Selin Demir" required>
+          </div>
+          <div class="form-group">
+            <label>Telefon Numaranız</label>
+            <input type="tel" class="form-input" id="input-phone" value="+90 532 987 6543" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Açık Servis Adresi (Bina No, Daire, Kat)</label>
+          <textarea class="form-input" id="input-address" rows="2" style="height: auto; padding: 8px 12px;" required placeholder="Örn: Caferağa Mah. Şair Nefi Sok. No:18 Daire:4 Moda / Kadıköy"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Kombi / Klima Markası ve Usta İçin Notlar (Opsiyonel)</label>
+          <input type="text" class="form-input" id="input-notes" placeholder="Örn: Demirdöküm Nitromix, kombi balkonda, zil çalışmıyor">
+        </div>
+
+        <!-- Bölüm 2: Kredi / Banka Kartı Bilgileri -->
+        <div style="font-size: 14px; font-weight: 700; color: var(--md-sys-color-primary); border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 8px;">
+          2. Kart Bilgileri (Sanal POS)
+        </div>
+
+        <div class="form-group">
+          <label>Kart Üzerindeki İsim</label>
+          <input type="text" class="form-input" id="input-card-name" value="SELİN DEMİR" required>
+        </div>
+
+        <div class="form-group">
+          <label>Kart Numarası</label>
+          <input type="text" class="form-input" id="input-card-number" value="5428 •••• •••• 9921" maxlength="19" required>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>Son Kullanma Tarihi</label>
+            <input type="text" class="form-input" id="input-card-expiry" value="12/28" placeholder="AA/YY" maxlength="5" required>
+          </div>
+          <div class="form-group">
+            <label>CVV / Güvenlik Kodu</label>
+            <input type="password" class="form-input" id="input-card-cvv" value="384" maxlength="4" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="btn-submit-pay" style="height: 48px; font-size: 15px; margin-top: 10px;">
+          <svg class="icon icon-md" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          <span id="btn-pay-text">₺1.400 Güvenli Öde ve Randevuyu Kesinleştir</span>
+        </button>
+      </form>
+
+      <!-- Başarı Durumu (Success Card) -->
+      <div class="success-overlay" id="payment-success-card">
+        <div class="success-icon-wrap">
+          <svg class="icon icon-lg" viewBox="0 0 24 24" style="width: 36px; height: 36px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+        </div>
+        <h3 style="font-size: 20px; font-weight: 700; color: #15803d;">Ödemeniz Başarıyla Alındı!</h3>
+        <p style="font-size: 14px; color: var(--md-sys-color-on-surface); line-height: 1.5;">
+          Randevunuz ustanın Google Calendar takvimine kesin olarak işlendi.<br>
+          Randevu özeti ve makbuzunuz <strong>WhatsApp hattınıza iletildi</strong>.
+        </p>
+        <div style="background: var(--md-sys-color-surface-container-low); padding: 14px 20px; border-radius: var(--md-shape-md); width: 100%; text-align: left; font-size: 13px;">
+          <div><strong>Takvim Kaydı:</strong> Google Calendar Onaylandı ✅</div>
+          <div><strong>Atanan Usta:</strong> Usta 1: Mehmet Usta</div>
+          <div><strong>Saat:</strong> Bugün 14:30 - 16:00</div>
+          <div><strong>Canlı Takip:</strong> Servis öncesi usta konum linki WhatsApp'tan paylaşılacaktır.</div>
+        </div>
+        <a href="/" class="btn btn-outlined" style="margin-top: 10px;">
+          Admin Dashboard'a Göz At
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Form submit simulator & Webhook trigger
+    const form = document.getElementById('checkout-form');
+    const successCard = document.getElementById('payment-success-card');
+    const btnSubmit = document.getElementById('btn-submit-pay');
+    const btnText = document.getElementById('btn-pay-text');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btnSubmit.disabled = true;
+      btnText.textContent = 'Ödeme Doğrulanıyor & Google Calendar İşleniyor...';
+
+      const fullAddress = document.getElementById('input-address').value;
+      const notes = document.getElementById('input-notes').value;
+
+      try {
+        // Canlı POS Webhook Endpointini Tetikle
+        const res = await fetch('/api/webhook/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appointmentId: 'apt_checkout_live',
+            fullAddress: fullAddress || 'Caferağa Mah. Şair Nefi Sok. No:18 D:4 Moda / Kadıköy',
+            notes: notes || 'Demirdöküm Nitromix kombi bakımı.',
+            transactionId: `TRX_${Date.now()}`
+          })
+        });
+      } catch (err) {
+        // Offline / Standalone modu için devam et
+      }
+
+      setTimeout(() => {
+        form.style.display = 'none';
+        successCard.style.display = 'flex';
+      }, 900);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+
+================================================================================
+🛠️  HİZMETCHATBOT — OTONOM KOMBİ & KLİMA BAKIM SERVİSİ
+Kadıköy & Üsküdar Bölgesi • 2 Usta • WhatsApp & Telegram • Google Calendar
+================================================================================
+  
+1. Veritabanı: Node.js dahili SQLite (WAL Modu) başlatılıyor...
+   ✅ Veritabanı hazır: 2 Usta kayıtlı, 3 KVKK kuralı aktif.
+
+2. Takvim Motoru: Google Calendar v3 Çift Usta senkronizasyonu başlatılıyor...
+   ✅ Takvim senkronize: 2 Usta, 0 çakışma.
+
+3. Mesajlaşma Kanalları: WhatsApp Baileys & Telegram adaptörleri ayağa kaldırılıyor...
+[WhatsApp] Kanal adaptörü aktif edildi (Mod: webhook).
+[Telegram] Kanal adaptörü aktif edildi.
+   ✅ Kanal adaptörleri dinlemede.
+
+4. Admin Paneli & REST API: Port 3000 üzerinde açılıyor...
+
+🚀 HizmetChatbot Sunucusu Başlatıldı!
+🌐 Dashboard: http://localhost:3000
+📡 REST API:  http://localhost:3000/api/stats
+
+================================================================================
+🚀 SİSTEM BAŞARIYLA CANLIYA ALINDI!
+👉 Admin Dashboard:  http://localhost:3000
+👉 Canlı API Durum:  http://localhost:3000/api/stats
+👉 Takvim Slotları:  http://localhost:3000/api/calendar/slots
+================================================================================
+  
