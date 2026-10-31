@@ -5,9 +5,11 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dashboard": "node src/server.js",
-    "test": "node tests/test-flow.js"
+    "start": "node --env-file=.env src/index.js",
+    "dashboard": "node --env-file=.env src/server.js",
+    "test": "node --env-file=.env tests/test-flow.js && node --env-file=.env tests/test-security-and-trainer.js && node --env-file=.env tests/test-telegram-intent-cooldown.js && node --env-file=.env tests/test-persona-localization-studio.js",
+    "test:telegram": "node --env-file=.env tests/test-telegram-intent-cooldown.js",
+    "test:studio": "node --env-file=.env tests/test-persona-localization-studio.js"
   },
   "keywords": [
     "chatbot",

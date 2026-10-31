@@ -3,6 +3,17 @@
  * Clean Architecture & Otonom Saha Operasyon Çekirdeği
  */
 
+import fs from 'node:fs';
+
+// Node.js dahili ortam değişkeni yükleyicisi (.env)
+try {
+  if (process.loadEnvFile && fs.existsSync('.env')) {
+    process.loadEnvFile();
+  }
+} catch (e) {
+  // .env yoksa veya önceden yüklendiyse devam et
+}
+
 import { initDatabase, TechnicianRepo, KVKKRepo } from './database/db.js';
 import { ChannelRouter } from './adapters/channel/channel-manager.js';
 import { CalendarEngine } from './adapters/calendar/calendar-adapter.js';

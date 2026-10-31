@@ -3,7 +3,7 @@
  * Clean Code, Modüler, Bağımsız Servis Mimarisi
  */
 
-import { CustomerRepo, MessageRepo, AppointmentRepo, TechnicianRepo } from '../database/db.js';
+import { CustomerRepo, MessageRepo, AppointmentRepo, TechnicianRepo, ChatbotSettingsRepo, PersonaRepo } from '../database/db.js';
 import { LLMEngine } from '../adapters/llm/llm-adapter.js';
 
 // Hizmet Kataloğu & Fiyatlandırma
@@ -32,12 +32,32 @@ export const STEPS = {
  */
 export async function processCustomerMessage(phoneNumber, incomingText, channel = 'whatsapp') {
   const cleanText = (incomingText || '').trim();
+  console.log(`\n📨 [${channel.toUpperCase()}] Gelen Mesaj (${phoneNumber}): "${cleanText}"`);
   
   // 1. Müşteri kaydını bul veya oluştur
   const customer = CustomerRepo.findOrCreate(phoneNumber, channel);
   
   // Gelen mesajı günlüğe kaydet
   MessageRepo.add(customer.id, 'customer', cleanText);
+
+  // ============================================================================
+  // GÜVENLİK KALKANI 1: 3 SAATLİK CEZA / COOLDOWN KONTROLÜ (SIFIR TOKEN MALİYETİ)
+  // ============================================================================
+  const blockStatus = CustomerRepo.isBlocked(customer);
+  if (blockStatus.isBlocked) {
+    ChatbotSettingsRepo.incrementShieldStats(250);
+    const defaultPenalty = 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.';
+    const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', defaultPenalty);
+    const replyText = penaltyMsg;
+    MessageRepo.add(customer.id, 'bot', replyText);
+    console.log(`🛡️ [GÜVENLİK KALKANI]: ${phoneNumber} kullanıcısı cezalı/engelli. Kalan süre: ~${blockStatus.remainingMinutes} dk. LLM çağrılmadı, token harcanmadı.`);
+    return {
+      replyText,
+      currentStep: customer.current_step,
+      isBlocked: true,
+      remainingMinutes: blockStatus.remainingMinutes
+    };
+  }
 
   // 2. Acil Opt-out / İptal Kontrolü (6698 s. KVKK ve 6563 s. ETK)
   if (/^(ret|iptal|dur|çık|cik|vazgeç|vazgec)$/i.test(cleanText)) {
@@ -48,6 +68,70 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
     return { replyText, currentStep: STEPS.INITIAL_GREETING };
   }
 
+  // ============================================================================
+  // GÜVENLİK KALKANI 2: YASAKLI KELİMELER / KÜFÜR VE SPAM MATRİSİ (SIFIR TOKEN)
+  // ============================================================================
+  const securityCheck = LLMEngine.checkSecurityAndFilter(cleanText);
+  if (securityCheck.matched) {
+    console.log(`⚠️ [GÜVENLİK TETİKLENDİ]:`, securityCheck.reason);
+
+    // 2.1 Ağır Küfür / Kural İhlali -> 3 Saat Engelleme
+    if (securityCheck.ruleType === 'banned_word' && securityCheck.action === 'mute_3h') {
+      CustomerRepo.blockUser(customer.id, 3);
+      CustomerRepo.incrementWarning(customer.id);
+      CustomerRepo.setLastIntent(customer.id, 'banned_word_mute_3h');
+      const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.');
+      MessageRepo.add(customer.id, 'bot', penaltyMsg);
+      return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+    }
+
+    // 2.2 Hakaret / 1 Saat Susturma
+    if (securityCheck.ruleType === 'banned_word' && securityCheck.action === 'mute_1h') {
+      CustomerRepo.blockUser(customer.id, 1);
+      CustomerRepo.incrementWarning(customer.id);
+      CustomerRepo.setLastIntent(customer.id, 'banned_word_mute_1h');
+      const penaltyMsg = 'Uygunsuz veya kural dışı ifade tespit edildiği için tarafınıza 1 saat boyunca yanıt verilemeyecektir.';
+      MessageRepo.add(customer.id, 'bot', penaltyMsg);
+      return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+    }
+
+    // 2.3 Hafif Uyarı
+    if (securityCheck.ruleType === 'banned_word' && securityCheck.action === 'warn') {
+      const warningCount = CustomerRepo.incrementWarning(customer.id);
+      CustomerRepo.setLastIntent(customer.id, 'banned_word_warn');
+      if (warningCount >= 3) {
+        CustomerRepo.blockUser(customer.id, 3);
+        const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.');
+        MessageRepo.add(customer.id, 'bot', penaltyMsg);
+        return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+      }
+      const warnMsg = 'Uyarı: Lütfen kurumsal servis asistanımız ile saygılı ve amaca uygun bir dille iletişim kurunuz. Tekrarında sistem 3 saat süreyle engellenecektir.';
+      MessageRepo.add(customer.id, 'bot', warnMsg);
+      return { replyText: warnMsg, currentStep: customer.current_step };
+    }
+
+    // 2.4 Spam Tetikleyici / Botu Test Etme / Anlamsız Mesaj
+    if (securityCheck.ruleType === 'spam_trigger' || securityCheck.ruleType === 'gibberish') {
+      const spamCount = CustomerRepo.incrementSpam(customer.id);
+      CustomerRepo.setLastIntent(customer.id, 'spam_trigger');
+      const maxSpam = parseInt(ChatbotSettingsRepo.get('max_spam_attempts', '3'), 10) || 3;
+      
+      if (spamCount >= maxSpam) {
+        CustomerRepo.blockUser(customer.id, 3);
+        const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.');
+        MessageRepo.add(customer.id, 'bot', penaltyMsg);
+        return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+      }
+
+      const redirectMsg = ChatbotSettingsRepo.get(
+        'off_topic_redirect_message',
+        'Biz Kadıköy & Üsküdar bölgesinde uzman kombi/klima servisiyiz. 🛠️ Yalnızca kombi bakımı, arıza onarımı ve petek temizliği konularında yardımcı olabiliyoruz. Size servis veya randevu konusunda nasıl yardımcı olabiliriz?'
+      );
+      MessageRepo.add(customer.id, 'bot', redirectMsg);
+      return { replyText: redirectMsg, currentStep: customer.current_step };
+    }
+  }
+
   let tempData = {};
   try {
     tempData = JSON.parse(customer.temp_data || '{}');
@@ -55,10 +139,57 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
     tempData = {};
   }
 
-  // Model-Agnostic LLM Varlık Çıkarımı (Entity Extraction)
-  const entities = await LLMEngine.extractEntities(cleanText, tempData);
+  // ============================================================================
+  // GÜVENLİK KALKANI 3 & LLM BEYİN: GEMINI 3.8 FLASH NİYET (INTENT) & VARLIKLAR
+  // ============================================================================
+  const entities = await LLMEngine.classifyIntentAndExtract(cleanText, tempData);
+
+  // 3.1 LLM Niyet Analizi: Konu Dışı (Off-Topic) veya Kötüye Kullanım Kontrolü
+  if (entities.intent === 'spam_or_abuse') {
+    CustomerRepo.blockUser(customer.id, 3);
+    const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.');
+    MessageRepo.add(customer.id, 'bot', penaltyMsg);
+    return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+  }
+
+  if (entities.offTopicDetected || entities.intent === 'off_topic') {
+    const spamCount = CustomerRepo.incrementSpam(customer.id);
+    CustomerRepo.setLastIntent(customer.id, 'off_topic');
+    const maxSpam = parseInt(ChatbotSettingsRepo.get('max_spam_attempts', '3'), 10) || 3;
+
+    if (spamCount >= maxSpam) {
+      CustomerRepo.blockUser(customer.id, 3);
+      const penaltyMsg = ChatbotSettingsRepo.get('cooldown_penalty_message', 'Sistemi gereksiz meşgul ettiğiniz veya botu oyun amaçlı kullandığınız tespit edilmiştir. Güvenlik ve token maliyetleri nedeniyle tarafınıza 3 saat boyunca yanıt verilemeyecektir.');
+      MessageRepo.add(customer.id, 'bot', penaltyMsg);
+      return { replyText: penaltyMsg, currentStep: customer.current_step, isBlocked: true };
+    }
+
+    const redirectMsg = entities.suggestedReply || ChatbotSettingsRepo.get(
+      'off_topic_redirect_message',
+      'Biz Kadıköy & Üsküdar bölgesinde uzman kombi/klima servisiyiz. 🛠️ Yalnızca kombi bakımı, arıza onarımı ve petek temizliği konularında yardımcı olabiliyoruz. Size servis veya randevu konusunda nasıl yardımcı olabiliriz?'
+    );
+    MessageRepo.add(customer.id, 'bot', redirectMsg);
+    return { replyText: redirectMsg, currentStep: customer.current_step };
+  }
+
+  // Geçerli bir servis isteği geldiğinde spam sayacını sıfırla ve son niyeti kaydet
+  CustomerRepo.resetSpam(customer.id);
+  CustomerRepo.setLastIntent(customer.id, entities.intent || 'service_request');
+
+  // Müşterinin konuşma tarzından persona tespiti ve veritabanı kaydı
+  if (entities.detectedPersona) {
+    CustomerRepo.updatePersona(customer.id, entities.detectedPersona, entities.personaConfidence || 0.85);
+    tempData.detectedPersona = entities.detectedPersona;
+  }
+
   if (entities.brandModel && !tempData.brandModel) {
     tempData.brandModel = entities.brandModel;
+  }
+  if (entities.serviceCode && !tempData.serviceCode) {
+    tempData.serviceCode = entities.serviceCode;
+  }
+  if (entities.district && !tempData.district) {
+    tempData.district = entities.district;
   }
   if (entities.urgency === 'urgent') {
     tempData.isUrgent = true;
@@ -86,8 +217,22 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
         replyText = `Açık rızanız kaydedildi. Teşekkür ederiz! ✅\n\n` + getServiceMenuMessage();
         nextStep = STEPS.SERVICE_SELECTION;
       } else {
-        // İlk karşılama ve KVKK bilgilendirmesi
-        replyText = `Merhaba! Kadıköy & Üsküdar Bölgesi Yetkili Kombi & Klima Bakım Servisi'ne hoş geldiniz. 🛠️\n\n` +
+        // İlk karşılama ve KVKK bilgilendirmesi (White-Label Dinamik Marka & Persona Empati Hitabı)
+        const profile = ChatbotSettingsRepo.getWhiteLabelProfile();
+        const personaKey = entities.detectedPersona || 'sekuler';
+        
+        let customGreeting = `Merhaba! ${profile.serviceRegions} Bölgesi Yetkili ${profile.brandName}'ne hoş geldiniz. 🛠️`;
+        if (personaKey === 'muhafazakar') {
+          customGreeting = `Ve aleyküm selam, hayırlı ve bereketli günler dileriz! ${profile.serviceRegions} Bölgesi Yetkili ${profile.brandName}'ne hoş geldiniz. Başımızın üstünde yeriniz var. 🛠️`;
+        } else if (personaKey === 'yasli') {
+          customGreeting = `Hürmetler efendim, geçmiş olsun, hiç canınızı sıkmayın. ${profile.serviceRegions} Bölgesi Yetkili ${profile.brandName}'ne hoş geldiniz. Ustamız hemen ilgilenecektir. 🛠️`;
+        } else if (personaKey === 'teknoloji_zayifi') {
+          customGreeting = `Merhabalar, hiç endişeniz olmasın, işlemimiz çok basit ve tamamen resmi güvence altındadır. ${profile.brandName}'ne hoş geldiniz. 🛠️`;
+        } else if (personaKey === 'genc') {
+          customGreeting = `Selam! Hiç canını sıkma, hemen hallediyoruz. ${profile.brandName}'ne hoş geldin! 🛠️`;
+        }
+
+        replyText = `${customGreeting}\n\n` +
           `6698 sayılı KVKK uyarınca randevu oluşturabilmemiz ve size ulaşabilmemiz için aydınlatma metnimizi onaylamanız gerekmektedir.\n\n` +
           `Devam etmek için lütfen *1* veya *ONAY* yazınız.`;
       }
@@ -99,9 +244,9 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
     // --------------------------------------------------------------------------
     case STEPS.SERVICE_SELECTION: {
       let selected = SERVICES[cleanText];
-      if (!selected && entities.serviceCode) {
+      if (!selected && (entities.serviceCode || tempData.serviceCode)) {
         const codeMap = { kombi_bakim: '1', ariza_tespit: '2', petek_temizlik: '3' };
-        const key = codeMap[entities.serviceCode];
+        const key = codeMap[entities.serviceCode || tempData.serviceCode];
         if (key) selected = SERVICES[key];
       }
 
@@ -124,7 +269,7 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
     // ADIM 4 & 5: Semt / Mahalle Alma & Usta Bölgesi Eşleme
     // --------------------------------------------------------------------------
     case STEPS.DISTRICT_INPUT: {
-      const district = entities.district || cleanText;
+      const district = entities.district || tempData.district || cleanText;
       if (district.length < 3) {
         replyText = `Lütfen geçerli bir semt veya mahalle adı yazınız (Örn: Kadıköy Moda veya Üsküdar Acıbadem):`;
         break;
@@ -193,11 +338,16 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
 
         CustomerRepo.updateStep(customer.id, STEPS.PAYMENT_PENDING, tempData);
 
+        const personaKey = tempData.detectedPersona || 'sekuler';
+        const personaPack = PersonaRepo.getByKey(personaKey);
+        const trustMsg = personaPack?.trust_building_message || 'Tüm servis işlemlerimiz ve parçalar 1 yıl resmi servis garantimiz altındadır. Sürpriz ek maliyet çıkmaz.';
+
         replyText = `Randevu Saatiniz Seçildi: *${selectedSlot.label}* ⏰\n` +
           `Usta: *${tempData.technician.name}*\n\n` +
           `Bu slot sizin için Google Calendar'da *15 dakika süreyle rezerve edildi*.\n\n` +
           `Randevunuzu kesinleştirmek için güvenli sanal POS ödeme linkiniz:\n` +
           `🔗 ${paymentLink}\n\n` +
+          `🛡️ *Güven ve Şeffaflık Güvencesi:*\n${trustMsg}\n\n` +
           `_(Açılan sayfada kart bilgilerinizi, açık adresinizi ve varsa kombi marka/notunuzu girebilirsiniz)_`;
         nextStep = STEPS.PAYMENT_PENDING;
       } else {
@@ -239,6 +389,9 @@ export async function processCustomerMessage(phoneNumber, incomingText, channel 
   // Yeni adımı güncelle ve bot cevabını veritabanına yaz
   CustomerRepo.updateStep(customer.id, nextStep, tempData);
   MessageRepo.add(customer.id, 'bot', replyText);
+
+  console.log(`📤 [${channel.toUpperCase()}] Bot Yanıtı: "${replyText.replace(/\n+/g, ' ')}"`);
+  console.log(`📍 [Diyalog Durumu]: Adım ${nextStep}\n`);
 
   return {
     replyText,

@@ -12,7 +12,8 @@ Kadıköy & Üsküdar Bölgesi • 2 Usta • WhatsApp & Telegram • Google Cal
 
 3. Mesajlaşma Kanalları: WhatsApp Baileys & Telegram adaptörleri ayağa kaldırılıyor...
 [WhatsApp] Kanal adaptörü aktif edildi (Mod: webhook).
-[Telegram] Kanal adaptörü aktif edildi.
+[Telegram] Kanal adaptörü aktif: @nesetustam_bot (nesetustam)
+[Telegram] Canlı mesaj dinleyicisi (Long Polling) devrede.
    ✅ Kanal adaptörleri dinlemede.
 
 4. Admin Paneli & REST API: Port 3000 üzerinde açılıyor...
@@ -28,3 +29,108 @@ Kadıköy & Üsküdar Bölgesi • 2 Usta • WhatsApp & Telegram • Google Cal
 👉 Takvim Slotları:  http://localhost:3000/api/calendar/slots
 ================================================================================
   
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "Merhaba randevu almak istiyorum"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Merhaba! Kadıköy & Üsküdar Bölgesi Yetkili Kombi & Klima Bakım Servisi'ne hoş geldiniz. 🛠️ 6698 sayılı KVKK uyarınca randevu oluşturabilmemiz ve size ulaşabilmemiz için aydınlatma metnimizi onaylamanız gerekmektedir. Devam etmek için lütfen *1* veya *ONAY* yazınız."
+📍 [Diyalog Durumu]: Adım 1
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "1"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Açık rızanız kaydedildi. Teşekkür ederiz! ✅ Lütfen almak istediğiniz kombi/klima hizmetini seçiniz: 1️⃣ *Kombi Periyodik Kış Bakımı* — ₺1.400 2️⃣ *Kombi Arıza & Parça Değişimi* — ₺850 3️⃣ *İlaçlı Petek Temizliği* — ₺1.200 Cevap olarak *1*, *2* veya *3* yazabilirsiniz."
+📍 [Diyalog Durumu]: Adım 2
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "1"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Seçiminiz: *Kombi Periyodik Kış Bakımı* (Tutar: ₺1400) Size en yakın ustamızı yönlendirebilmemiz için lütfen oturduğunuz *Semt / Mahalleyi* yazınız veya WhatsApp konumunuzu paylaşınız. _(Örn: Kadıköy Moda, Üsküdar Acıbadem vb.)_"
+📍 [Diyalog Durumu]: Adım 3
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "Kadıköy moda"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": "Kadıköy (Moda)",
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Bölgeniz: *Kadıköy (Moda)* kaydedildi. Sorumlu Uzman: *Usta 1: Mehmet Usta* Google Calendar takviminde çakışmasız en uygun randevu saatleri: 📅 *A)* Bugün 14:30 - 16:00 📅 *B)* Yarın 11:00 - 12:30 📅 *C)* Yarın 16:30 - 18:00 Lütfen randevu için tercih ettiğiniz harfi yazınız (*A*, *B* veya *C*):"
+📍 [Diyalog Durumu]: Adım 4
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "A"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": "A",
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Randevu Saatiniz Seçildi: *Bugün 14:30 - 16:00* ⏰ Usta: *Usta 1: Mehmet Usta* Bu slot sizin için Google Calendar'da *15 dakika süreyle rezerve edildi*. Randevunuzu kesinleştirmek için güvenli sanal POS ödeme linkiniz: 🔗 http://localhost:3000/pay/pay_zk6xn17m _(Açılan sayfada kart bilgilerinizi, açık adresinizi ve varsa kombi marka/notunuzu girebilirsiniz)_"
+📍 [Diyalog Durumu]: Adım 5
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "Teşekkürler peki şimdi ne yapmam lazım?"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Randevunuzun kesinleşmesi için ödeme linki bekleniyor ⏳ 🔗 Ödeme Linki: http://localhost:3000/pay/pay_zk6xn17m Hizmet: *Kombi Periyodik Kış Bakımı* (₺1400) Usta: *Usta 1: Mehmet Usta* Ödemeniz tamamlandığında randevu özeti ve usta canlı takip bilgisi buradan otomatik iletilecektir."
+📍 [Diyalog Durumu]: Adım 5
+
+
+📨 [TELEGRAM] Gelen Mesaj (tg_1534566577): "Ödedim"
+
+🧠 [LLM BEYİN - Google AI Studio (gemini-3.8-flash)] Varlıklar Çıkarıldı:
+{
+  "serviceCode": null,
+  "brandModel": null,
+  "district": null,
+  "preferredSlotCode": null,
+  "kvkkConsent": null,
+  "urgency": "normal"
+}
+📤 [TELEGRAM] Bot Yanıtı: "Randevunuzun kesinleşmesi için ödeme linki bekleniyor ⏳ 🔗 Ödeme Linki: http://localhost:3000/pay/pay_zk6xn17m Hizmet: *Kombi Periyodik Kış Bakımı* (₺1400) Usta: *Usta 1: Mehmet Usta* Ödemeniz tamamlandığında randevu özeti ve usta canlı takip bilgisi buradan otomatik iletilecektir."
+📍 [Diyalog Durumu]: Adım 5
+

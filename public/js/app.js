@@ -80,30 +80,40 @@ function initTabs() {
     legal: 'KVKK & Hukuk Departmanı Kural Masası',
     cto: 'İş Geliştirme & Yeni Görevler (CTO Brain Chat)',
     calendar: 'Usta Takvimi & Google Calendar Senkronizasyonu',
-    settings: 'Sistem & API / Slot Entegrasyon Ayarları'
+    settings: 'Sistem & API / Slot Entegrasyon Ayarları',
+    'chatbot-trainer': 'Chatbot Eğitici, Persona & Token Güvenlik Masası'
   };
+
+  function switchTab(tabId) {
+    navLinks.forEach(l => l.classList.remove('active'));
+    tabPanes.forEach(p => p.classList.remove('active'));
+
+    const targetLink = document.querySelector(`.nav-link[data-tab="${tabId}"]`);
+    const targetPane = document.getElementById(`tab-${tabId}`);
+
+    if (targetLink) targetLink.classList.add('active');
+    if (targetPane) targetPane.classList.add('active');
+
+    AppState.currentTab = tabId;
+    if (topTitle && titles[tabId]) {
+      topTitle.textContent = titles[tabId];
+    }
+  }
 
   navLinks.forEach(link => {
     link.addEventListener('click', () => {
       const tabId = link.getAttribute('data-tab');
       if (!tabId) return;
-
-      navLinks.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-
-      tabPanes.forEach(pane => {
-        pane.classList.remove('active');
-        if (pane.id === `tab-${tabId}`) {
-          pane.classList.add('active');
-        }
-      });
-
-      AppState.currentTab = tabId;
-      if (topTitle && titles[tabId]) {
-        topTitle.textContent = titles[tabId];
-      }
+      switchTab(tabId);
     });
   });
+
+  // URL / Pathname tab kontrolü (/admin/chatbot-trainer veya #chatbot-trainer)
+  const path = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  if (path.includes('chatbot-trainer') || hash.includes('chatbot-trainer')) {
+    switchTab('chatbot-trainer');
+  }
 }
 
 // Technician Status Toggle in Dashboard

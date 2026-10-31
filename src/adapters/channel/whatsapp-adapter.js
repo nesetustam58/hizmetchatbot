@@ -10,6 +10,7 @@ export class WhatsAppChannelAdapter extends BaseChannelAdapter {
     super('whatsapp');
     this.mode = config.mode || process.env.WHATSAPP_MODE || 'webhook'; // 'baileys' | 'webhook' | 'mock'
     this.authFolder = config.authFolder || process.env.WA_AUTH_FOLDER || './data/baileys_auth';
+    this.webhookUrl = config.webhookUrl || process.env.WHATSAPP_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
     this.outboxHistory = [];
   }
 
@@ -34,12 +35,13 @@ export class WhatsAppChannelAdapter extends BaseChannelAdapter {
     this.outboxHistory.push(payload);
 
     // Canlı Baileys soketi veya Webhook entegrasyon noktası
-    if (this.mode === 'webhook' && process.env.WHATSAPP_WEBHOOK_URL) {
+    const targetUrl = this.webhookUrl || process.env.WHATSAPP_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
+    if (this.mode === 'webhook' && targetUrl) {
       try {
-        await fetch(process.env.WHATSAPP_WEBHOOK_URL, {
+        await fetch(targetUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ number: to, message: text })
+          body: JSON.stringify({ number: to, message: text, channel: 'whatsapp' })
         });
       } catch (err) {
         console.warn('[WhatsApp] Webhook gönderim uyarısı:', err.message);

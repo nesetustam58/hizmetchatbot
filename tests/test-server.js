@@ -104,6 +104,70 @@ async function runServerTests() {
     console.log('   Gelen Cevap Özeti:', incomingRes.data.replyText.split('\n')[0]);
     console.log('   Adım:', incomingRes.data.currentStep);
 
+    // 11. Chatbot Eğitici: Ayarları Getirme
+    console.log('11. Test: GET /api/chatbot-trainer/settings');
+    const trainerSettingsRes = await request('/api/chatbot-trainer/settings');
+    console.log('   Durum Kodu:', trainerSettingsRes.status);
+    console.log('   Yasaklı Kelime Sayısı:', trainerSettingsRes.data.settings.bannedWords.length);
+    if (trainerSettingsRes.status !== 200) throw new Error('Trainer settings API başarısız!');
+
+    // 12. Chatbot Eğitici: Kütüphane / RAG Lite Listeleme
+    console.log('12. Test: GET /api/chatbot-trainer/knowledge');
+    const knowledgeRes = await request('/api/chatbot-trainer/knowledge');
+    console.log('   Kütüphane Belge Sayısı:', knowledgeRes.data.documents.length);
+    if (knowledgeRes.status !== 200) throw new Error('Trainer knowledge API başarısız!');
+
+    // 13. Chatbot Eğitici: Canlı Intent & Güvenlik Testi
+    console.log('13. Test: POST /api/chatbot-trainer/test-intent');
+    const testIntentRes = await request('/api/chatbot-trainer/test-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { message: 'Kombim sıcak su vermiyor, Kadıköy Acıbadem' }
+    });
+    console.log('   Tespit Edilen Niyet:', testIntentRes.data.intentResult?.intent);
+    console.log('   Aksiyon:', testIntentRes.data.actionRecommendation);
+    if (testIntentRes.status !== 200) throw new Error('Trainer test-intent API başarısız!');
+
+    // 14. /admin/chatbot-trainer Sayfa Rotası Testi
+    console.log('14. Test: GET /admin/chatbot-trainer');
+    const pageRes = await request('/admin/chatbot-trainer');
+    console.log('   Sayfa HTTP Durumu:', pageRes.status);
+    if (pageRes.status !== 200) throw new Error('Admin chatbot-trainer sayfası yüklenemedi!');
+
+    // 15. Model Studio API Testi
+    console.log('15. Test: GET /api/chatbot-trainer/models');
+    const modelsRes = await request('/api/chatbot-trainer/models');
+    console.log('   Toplam Model Sayısı:', modelsRes.data.models.length);
+    if (modelsRes.status !== 200 || modelsRes.data.models.length < 4) throw new Error('Models API başarısız!');
+
+    // 16. Kültürel Yerelleştirme API Testi
+    console.log('16. Test: GET /api/chatbot-trainer/localization?lang=tr');
+    const locRes = await request('/api/chatbot-trainer/localization?lang=tr');
+    console.log('   Kültürel Kural Sayısı:', locRes.data.rules.length);
+    if (locRes.status !== 200 || locRes.data.rules.length < 5) throw new Error('Localization API başarısız!');
+
+    // 17. Eğitilme Durumu (Auto-Training) API Testi
+    console.log('17. Test: GET /api/chatbot-trainer/training-status');
+    const statusRes = await request('/api/chatbot-trainer/training-status');
+    console.log('   Eğitim Seviyesi:', `%${statusRes.data.metrics.trainingPercent} (${statusRes.data.metrics.readinessStatus})`);
+    if (statusRes.status !== 200) throw new Error('Training status API başarısız!');
+
+    // 18. 9 Persona Paketleri API Testi
+    console.log('18. Test: GET /api/chatbot-trainer/personas');
+    const personasRes = await request('/api/chatbot-trainer/personas');
+    console.log('   Persona Paketi Sayısı:', personasRes.data.personas.length);
+    if (personasRes.status !== 200 || personasRes.data.personas.length !== 9) throw new Error('Personas API başarısız!');
+
+    // 19. Canlı Persona Tespiti API Testi
+    console.log('19. Test: POST /api/chatbot-trainer/detect-persona');
+    const detectRes = await request('/api/chatbot-trainer/detect-persona', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: { message: 'Selamün aleyküm ustam hayırlı işler' }
+    });
+    console.log('   Tespit Edilen Persona:', detectRes.data.detectedPersona);
+    if (detectRes.data.detectedPersona !== 'muhafazakar') throw new Error('Persona tespiti başarısız!');
+
     console.log('\n✅ TÜM SUNUCU VE ENTEGRASYON TESTLERİ BAŞARIYLA GEÇTİ!');
   } finally {
     server.close();

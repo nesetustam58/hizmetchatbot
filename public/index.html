@@ -78,6 +78,15 @@
         </svg>
         <span>Sistem Ayarları</span>
       </div>
+
+      <!-- 7. Chatbot Eğitici & Persona -->
+      <div class="nav-link" data-tab="chatbot-trainer">
+        <svg class="icon icon-md" viewBox="0 0 24 24">
+          <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V7h2a3 3 0 0 1 3 3v2h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v1a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-1H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h1v-2a3 3 0 0 1 3-3h2V5.72A2.002 2.002 0 0 1 10 4a2 2 0 0 1 2-2m-3 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-6.5 6a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/>
+        </svg>
+        <span>Chatbot Eğitici</span>
+        <span class="badge badge-success" style="font-size:9px; padding:1px 5px; margin-left:auto;">Gemini 3.8</span>
+      </div>
     </nav>
 
     <!-- Sidebar Footer (Technician Mini Status) -->
@@ -730,6 +739,564 @@
         </div>
       </section>
 
+      <!-- ======================================================== -->
+      <!-- 7. TAB: CHATBOT EĞİTİCİ & PERSONA & GÜVENLİK MODÜLÜ     -->
+      <!-- ======================================================== -->
+      <section class="tab-pane" id="tab-chatbot-trainer">
+        <div style="padding: 24px; max-width: 1300px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px;">
+          
+          <!-- Header Bar -->
+          <div class="panel-card" style="padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); border-left: 5px solid #16a34a;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-success" style="font-weight: 700;">Otonom SaaS AI Engine</span>
+                <span class="badge badge-primary" style="font-weight: 700;" id="active-model-badge">Gemini 3.8 Flash</span>
+                <span class="badge badge-neutral" style="font-weight: 700;">Multi-Persona & Cultural NLP</span>
+              </div>
+              <h2 style="font-size: 20px; font-weight: 800; color: #1e293b; margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                Chatbot Eğitici, Çok Dilli Yerelleştirme & Persona Stüdyosu
+              </h2>
+              <p style="font-size: 13px; color: var(--md-sys-color-outline); margin-top: 2px;">
+                Kültürel Şiveler, 9 Müşteri Personası, Otomatik Onay Kuyruğu ve Token Korumalı Cooldown
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <!-- Canlı SaaS Telemetri Sayaçları -->
+              <div style="background: #ffffff; border: 1px solid #bbf7d0; border-radius: 8px; padding: 6px 12px; text-align: right; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <div style="font-size: 10.5px; color: #166534; font-weight: 600;">Token Shield Tasarrufu</div>
+                <div style="font-size: 15px; font-weight: 800; color: #15803d;" id="shield-stat-tokens">~0 Token ($0)</div>
+              </div>
+              <div style="background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 6px 12px; text-align: right; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                <div style="font-size: 10.5px; color: #9a3412; font-weight: 600;">Engellenen Tehdit / Spam</div>
+                <div style="font-size: 15px; font-weight: 800; color: #c2410c;" id="shield-stat-blocked">0 Tehdit</div>
+              </div>
+              <button class="btn btn-outlined btn-sm" id="btn-reload-trainer">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46A7.93 7.93 0 0020 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74A7.93 7.93 0 004 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                Yenile
+              </button>
+              <button class="btn btn-primary" id="btn-save-all-trainer" style="height: 40px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zM6 6h9v4H6z"/></svg>
+                Tüm Değişiklikleri Anında Kaydet
+              </button>
+            </div>
+          </div>
+
+          <!-- Chatbot Modelleri Üst Seçici Barı (Model Bazlı Çalışma Alanı) -->
+          <div class="panel-card" style="padding: 14px 20px; background: #ffffff; border: 1.5px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span style="font-size: 13px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.38-1 1.72V7h2a3 3 0 0 1 3 3v2h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v1a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-1H3a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h1v-2a3 3 0 0 1 3-3h2V5.72A2.002 2.002 0 0 1 10 4a2 2 0 0 1 2-2m-3 8a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3m-6.5 6a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1z"/></svg>
+                Eğitilen Chatbot Modeli:
+              </span>
+              <!-- Model Hap Butonları -->
+              <div id="bot-models-pill-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <!-- Dinamik olarak render edilecek: Tr-usta (Aktif), Gemini 1.5 Pro, vb. -->
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn btn-outlined btn-sm" id="btn-open-add-model-modal" style="font-weight: 600;">
+                + Yeni Chatbot Modeli Eğit
+              </button>
+            </div>
+          </div>
+
+          <!-- Seçili Modele Özel 5 Alt Sekme Barı -->
+          <div class="trainer-sub-tabs">
+            <button type="button" class="trainer-tab-btn active" data-subtab="models">
+              ⚙️ <span id="subtab-model-name-label">Tr-usta</span> Özelleştirme & Parametreler
+            </button>
+            <button type="button" class="trainer-tab-btn" data-subtab="localization">
+              🌍 Dil Desteği & Kültürel Yerelleştirme
+            </button>
+            <button type="button" class="trainer-tab-btn" data-subtab="autotraining">
+              📊 Eğitilme Durumu & Onay Kuyruğu
+            </button>
+            <button type="button" class="trainer-tab-btn" data-subtab="personas">
+              🎭 Müşteri Personası & Empati Motoru
+            </button>
+            <button type="button" class="trainer-tab-btn" data-subtab="security">
+              🛡️ Güvenlik Kalkanı, Kütüphane & Cooldown
+            </button>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- ALT SEKME 1: MODEL ÖZELLEŞTİRME & PARAMETRELER (MODEL STUDIO) -->
+          <!-- ======================================================== -->
+          <div class="trainer-subtab-pane active" id="subtab-models">
+            <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px;">
+              
+              <!-- Sol: Mevcut / Eklenebilecek Modeller Listesi -->
+              <div class="panel-card">
+                <div class="panel-card-header">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700;">Tanımlı LLM Modelleri</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">Aktif modeli seçin veya yeni bir model mimarisi ekleyin</p>
+                  </div>
+                  <button type="button" class="btn btn-outlined btn-sm" id="btn-open-add-model-modal">
+                    + Yeni Model Ekle
+                  </button>
+                </div>
+                <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 10px;" id="model-cards-container">
+                  <!-- Rendered dynamically by chatbot-trainer.js -->
+                </div>
+              </div>
+
+              <!-- Sağ: Seçilen Modelin Özellikleri ve Parametreleri -->
+              <div class="panel-card">
+                <div class="panel-card-header">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700;" id="model-editor-title">Model Parametreleri ve İnce Ayar</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">Sıcaklık, token sınırı ve modele özel dikey kilit talimatı</p>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-activate-selected-model">
+                    Bu Modeli Canlıya Al
+                  </button>
+                </div>
+                <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 14px;">
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Model İsmi</label>
+                      <input type="text" class="form-input" id="model-prop-name">
+                    </div>
+                    <div>
+                      <label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Model Kodu / API Endpoint</label>
+                      <input type="text" class="form-input" id="model-prop-code">
+                    </div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                      <label style="font-size: 11.5px; font-weight: 600; display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span>Yaratıcılık / Sıcaklık (Temperature)</span>
+                        <span id="model-temp-val" style="font-weight: 700; color: #16a34a;">0.1</span>
+                      </label>
+                      <input type="range" class="form-input" id="model-prop-temp" min="0.0" max="1.0" step="0.05" value="0.1" style="height: 32px; padding: 0;">
+                    </div>
+                    <div>
+                      <label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Maksimum Çıktı Token Sınırı</label>
+                      <input type="number" class="form-input" id="model-prop-maxtokens" min="256" max="8192" step="128" value="1024">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style="font-size: 11.5px; font-weight: 600; display: block; margin-bottom: 4px;">Modele Özel Ek Sistem Talimatı (Prompt Override)</label>
+                    <textarea class="form-input" id="model-prop-prompt" rows="6" style="font-family: var(--md-sys-typescale-font-mono); font-size: 12px; line-height: 1.4;" placeholder="Bu modele özgü ek persona ve kurallar..."></textarea>
+                  </div>
+
+                  <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn btn-outlined btn-sm" id="btn-save-model-params">
+                      Parametre Değişikliklerini Kaydet
+                    </button>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- ALT SEKME 2: DİL DESTEĞİ & KÜLTÜREL YERELLEŞTİRME (CULTURAL NLP) -->
+          <!-- ======================================================== -->
+          <div class="trainer-subtab-pane" id="subtab-localization">
+            <div class="panel-card">
+              <div class="panel-card-header">
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 700;">Kültürel Söylemler, Şiveler, Lokal Deyimler & Mizah Yönetimi</h3>
+                  <p style="font-size: 12px; color: var(--md-sys-color-outline);">
+                    Seçilen ülkenin/şehrin dil kullanım alışkanlıkları, esnaf söylemleri ve insansı empati dinamikleri
+                  </p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select class="form-input" id="loc-filter-lang" style="width: 140px; font-size: 12px; height: 34px;">
+                    <option value="tr">Türkçe (TR)</option>
+                    <option value="en">English (EN)</option>
+                    <option value="de">Deutsch (DE)</option>
+                  </select>
+                  <button type="button" class="btn btn-outlined btn-sm" id="btn-scan-cultural-nlp">
+                    🌐 Web & Sosyal Medyadan Tara
+                  </button>
+                </div>
+              </div>
+
+              <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 16px;">
+                
+                <!-- Hızlı Kural Tanımlama Formu -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr auto; gap: 10px; align-items: end;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Kalıp / Deyim / Söylem</label>
+                    <input type="text" class="form-input" id="new-loc-phrase" placeholder="Örn: kolay gelsin usta" style="font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Bölge / Şive</label>
+                    <input type="text" class="form-input" id="new-loc-region" placeholder="Örn: istanbul / ege" value="istanbul" style="font-size: 12px;">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Kategori</label>
+                    <select class="form-input" id="new-loc-category" style="font-size: 12px;">
+                      <option value="cultural_greeting">Kültürel Selam / Temenni</option>
+                      <option value="dialect">Bölgesel Şive / Ağız</option>
+                      <option value="idiom">Lokal Deyim / Tabir</option>
+                      <option value="humor_empathy">Mizah / Serzeniş / Espri</option>
+                      <option value="slang_shield">Argo / Rahatsız Edici Kalkan</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: 600; display: block; margin-bottom: 2px;">Modelin İnsansı Yanıt İlkesi</label>
+                    <input type="text" class="form-input" id="new-loc-response" placeholder="Örn: 'Sağ olun, size de bereketli günler!' esnaf nezaketiyle dön" style="font-size: 12px;">
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-add-loc-rule" style="height: 38px;">
+                    Kural Ekle
+                  </button>
+                </div>
+
+                <!-- Kurallar Tablosu -->
+                <div style="overflow-x: auto;">
+                  <table class="kvkk-rules-table" style="font-size: 12.5px;">
+                    <thead>
+                      <tr>
+                        <th>Söylem / Deyim</th>
+                        <th>Kategori</th>
+                        <th>Bölge</th>
+                        <th>Modelin İnsansı Yanıt Kılavuzu</th>
+                        <th>Durum</th>
+                        <th style="text-align: right;">İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody id="localization-rules-tbody">
+                      <!-- Rendered by chatbot-trainer.js -->
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- ALT SEKME 3: EĞİTİLME DURUMU & ONAY KUYRUĞU (AUTO-TRAINING) -->
+          <!-- ======================================================== -->
+          <div class="trainer-subtab-pane" id="subtab-autotraining">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- Metrikler & İlerleme Paneli -->
+              <div class="panel-card" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 1px solid #bfdbfe;">
+                <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                      <span style="font-size: 11px; font-weight: 700; color: #1e40af; text-transform: uppercase;">Otonom Eğitilme ve Hazır Oluş Seviyesi</span>
+                      <h3 style="font-size: 22px; font-weight: 800; color: #1e3a8a;" id="metric-readiness-title">Model Canlı Hizmete %94 Hazır</h3>
+                    </div>
+                    <span class="badge badge-success" id="metric-readiness-badge" style="font-size: 12px; padding: 4px 10px;">
+                      Mükemmel Durumda
+                    </span>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 9999px; overflow: hidden;">
+                    <div id="metric-progress-bar" style="width: 94%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #059669 100%); border-radius: 9999px; transition: width 0.5s ease;"></div>
+                  </div>
+
+                  <!-- 4 KPI Kutusu -->
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 6px;">
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                      <span style="font-size: 11px; color: #64748b; display: block;">Taranan Toplam Kelime</span>
+                      <strong style="font-size: 16px; color: #0f172a;" id="metric-total-words">0 Kelime</strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                      <span style="font-size: 11px; color: #64748b; display: block;">Aktif Kütüphane Belgesi</span>
+                      <strong style="font-size: 16px; color: #0f172a;" id="metric-total-docs">0 Belge</strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px;">
+                      <span style="font-size: 11px; color: #64748b; display: block;">Kültürel Kural Sayısı</span>
+                      <strong style="font-size: 16px; color: #0f172a;" id="metric-total-locs">0 Kural</strong>
+                    </div>
+                    <div style="background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px;">
+                      <span style="font-size: 11px; color: #c2410c; display: block;">Onay Bekleyen AI Önerisi</span>
+                      <strong style="font-size: 16px; color: #9a3412;" id="metric-pending-suggs">0 Öneri</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- AI Öneri Onay Kuyruğu (Approval Queue) -->
+              <div class="panel-card">
+                <div class="panel-card-header">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700;">AI Öneri ve Sürekli İyileştirme Onay Kuyruğu</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">
+                      Modelin müşteri sohbetlerinden ve kaynaklardan keşfettiği kurallar sizin onayınızla canlıya entegre edilir
+                    </p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-outlined btn-sm" id="btn-filter-pending-sugg">Yalnızca Bekleyenler</button>
+                    <button type="button" class="btn btn-outlined btn-sm" id="btn-filter-all-sugg">Tüm Öneriler</button>
+                  </div>
+                </div>
+                <div class="panel-card-body" style="overflow-x: auto;">
+                  <table class="kvkk-rules-table" style="font-size: 12.5px;">
+                    <thead>
+                      <tr>
+                        <th>Öneri Başlığı & Kaynak</th>
+                        <th>Kategori</th>
+                        <th>Önerilen Canlı Kural / Bilgi</th>
+                        <th>Güven</th>
+                        <th>Durum</th>
+                        <th style="text-align: right;">Yönetici Onayı</th>
+                      </tr>
+                    </thead>
+                    <tbody id="suggestions-tbody">
+                      <!-- Rendered by chatbot-trainer.js -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- ALT SEKME 4: MÜŞTERİ PERSONASI & EMPATİ MOTORU (TONE MATCHING) -->
+          <!-- ======================================================== -->
+          <div class="trainer-subtab-pane" id="subtab-personas">
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+              
+              <!-- Canlı Persona & Empati Analiz Laboratuvarı -->
+              <div class="panel-card" style="border: 1px solid #fed7aa; background: #fffaf5;">
+                <div class="panel-card-header" style="background: #ffedd5; border-bottom: 1px solid #fed7aa;">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700; color: #9a3412;">Canlı Müşteri Persona & Empati Tonu Analiz Laboratuvarı</h3>
+                    <p style="font-size: 12px; color: #c2410c;">Müşterinin yazım tarzına göre hangi persona paketinin ve güven telkininin seçildiğini test edin</p>
+                  </div>
+                  <span class="badge badge-warning">Empathy Engine</span>
+                </div>
+                <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; gap: 10px;">
+                    <input type="text" class="form-input" id="persona-test-input" placeholder="Müşterinin ilk mesajını yazın (Örn: 'Selamün aleyküm ustam hayırlı işler' veya 'Evladım biz yaşlıyız anlamayız' ya da 'Bar basıncı düştü')..." style="flex: 1;">
+                    <button type="button" class="btn btn-primary" id="btn-test-persona">
+                      Personayı & Tonu Analiz Et
+                    </button>
+                  </div>
+
+                  <!-- Persona Test Sonuç Kutusu -->
+                  <div id="persona-test-result-box" style="display: none; background: #ffffff; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; margin-bottom: 10px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 12px; color: #64748b;">Tespit Edilen Persona:</span>
+                        <span class="badge badge-primary" id="persona-res-tag" style="font-size: 13px;">-</span>
+                      </div>
+                      <div style="font-size: 12px; color: #16a34a; font-weight: 700;" id="persona-res-confidence">Güven: %95</div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12.5px;">
+                      <div>
+                        <strong style="color: #475569;">Uygulanacak Empati ve Hitap Kılavuzu:</strong>
+                        <p id="persona-res-guideline" style="margin-top: 2px; color: #0f172a; font-style: italic;">-</p>
+                      </div>
+                      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px 12px;">
+                        <strong style="color: #166534;">🛡️ İnsansı Güven Telkini (Müşteri asla soyuluyormuş hissetmez):</strong>
+                        <p id="persona-res-trust" style="margin-top: 2px; color: #14532d;">-</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 9 Persona Paketi Kartları Masası -->
+              <div class="panel-card">
+                <div class="panel-card-header">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700;">Tanımlı 9 Müşteri Persona Paketi ve İletişim Stratejileri</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">
+                      Sistem müşteriyi bu 9 koddan birine bağlar ve ilgili empati paketini dinamik çağırır
+                    </p>
+                  </div>
+                </div>
+                <div class="panel-card-body">
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;" id="personas-grid-container">
+                    <!-- Rendered by chatbot-trainer.js -->
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ======================================================== -->
+          <!-- ALT SEKME 5: GÜVENLİK KALKANI, RAG & COOLDOWN (SECURITY STUDIO) -->
+          <!-- ======================================================== -->
+          <div class="trainer-subtab-pane" id="subtab-security">
+            
+            <!-- Canlı Niyet (Intent) & Güvenlik Test Simülatörü Kartı -->
+            <div class="panel-card" style="border: 1px solid #c7d2fe; background: #faf5ff;">
+              <div class="panel-card-header" style="background: #f3e8ff; border-bottom: 1px solid #e9d5ff;">
+                <div>
+                  <h3 style="font-size: 15px; font-weight: 700; color: #6b21a8; display: flex; align-items: center; gap: 8px;">
+                    <svg class="icon icon-md" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+                    Canlı Niyet (Intent), Heuristik ve Güvenlik Test Laboratuvarı
+                  </h3>
+                  <p style="font-size: 12px; color: #7e22ce;">Modeli çalıştırmadan önce güvenlik kalkanı ve niyet sınıflandırmasını test edin</p>
+                </div>
+                <span class="badge badge-primary">Sıfır Risk Testi</span>
+              </div>
+              <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 14px;">
+                <div style="display: flex; gap: 10px;">
+                  <input type="text" class="form-input" id="trainer-test-input" placeholder="Müşteri mesajı yazın (Örn: 'Kombim E01 hatası veriyor Moda'dayım' veya 'Bana hava durumunu söyle' ya da küfürlü test)..." style="flex: 1;">
+                  <button type="button" class="btn btn-primary" id="btn-run-intent-test">
+                    Niyeti & Kalkanı Test Et
+                  </button>
+                </div>
+
+                <!-- Test Sonucu Görsel Paneli -->
+                <div id="trainer-test-result-box" style="display: none; background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--md-shape-md); padding: 16px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 700; font-size: 13px;">Test Sonucu Değerlendirmesi:</span>
+                      <span id="test-result-action-badge" class="badge badge-success">OK</span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--md-sys-color-outline);" id="test-result-latency">Gecikme: 0ms</div>
+                  </div>
+
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; font-size: 12.5px;">
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      <span style="color: #64748b; font-size: 11px; display: block;">Tespit Edilen Niyet (Intent):</span>
+                      <strong id="test-result-intent" style="color: #0f172a; font-size: 14px;">-</strong>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      <span style="color: #64748b; font-size: 11px; display: block;">Konu Dışı (Off-Topic) Durumu:</span>
+                      <strong id="test-result-offtopic" style="color: #0f172a; font-size: 14px;">-</strong>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      <span style="color: #64748b; font-size: 11px; display: block;">Güvenlik Kalkanı Tetiklendi mi?:</span>
+                      <strong id="test-result-security" style="color: #0f172a; font-size: 14px;">-</strong>
+                    </div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                      <span style="color: #64748b; font-size: 11px; display: block;">Çıkarılan Hizmet / Marka:</span>
+                      <strong id="test-result-entities" style="color: #0f172a; font-size: 14px;">-</strong>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 12px; background: #f1f5f9; padding: 10px 14px; border-radius: 6px; font-size: 12.5px;">
+                    <span style="font-weight: 600; color: #475569;">Botun Döndüreceği Aksiyon / Mesaj:</span>
+                    <p id="test-result-suggested-reply" style="margin-top: 4px; color: #1e293b; font-style: italic;">-</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2 Kolon Grid: Kütüphane & Yasaklı Kelimeler / Cooldown -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+              
+              <!-- Sol: Kütüphane & Kaynak Yönetimi (RAG Lite) -->
+              <div class="panel-card">
+                <div class="panel-card-header">
+                  <div>
+                    <h3 style="font-size: 15px; font-weight: 700;">Kütüphane & Kaynak Yönetimi (RAG Lite)</h3>
+                    <p style="font-size: 12px; color: var(--md-sys-color-outline);">PDF metinleri, harici URL'ler ve teknik kılavuzlar modele bağlam olarak aktarılır</p>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-open-knowledge-modal">
+                    + Belge Ekle
+                  </button>
+                </div>
+                <div class="panel-card-body" style="overflow-x: auto;">
+                  <table class="kvkk-rules-table" style="font-size: 12px;">
+                    <thead>
+                      <tr>
+                        <th>Belge Başlığı</th>
+                        <th>Kaynak</th>
+                        <th>Token</th>
+                        <th>Durum</th>
+                        <th style="text-align: right;">İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody id="trainer-knowledge-tbody">
+                      <!-- Rendered by chatbot-trainer.js -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Sağ: Yasaklı Kelimeler, Spam & Cooldown Masası -->
+              <div style="display: flex; flex-direction: column; gap: 20px;">
+                
+                <!-- Yasaklı Kelimeler Matrisi -->
+                <div class="panel-card">
+                  <div class="panel-card-header">
+                    <div>
+                      <h3 style="font-size: 15px; font-weight: 700;">Yasaklı / Küfürlü Kelimeler Matrisi</h3>
+                      <p style="font-size: 12px; color: var(--md-sys-color-outline);">Küfür ve botu manipüle etme girişimlerine anında ceza</p>
+                    </div>
+                    <span class="badge badge-warning">Zero-Token Filter</span>
+                  </div>
+                  <div class="panel-card-body" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr auto; gap: 6px; align-items: end;">
+                      <input type="text" class="form-input" id="new-banned-word" placeholder="Yasaklı kelime..." style="font-size: 11.5px;">
+                      <select class="form-input" id="new-banned-match" style="font-size: 11.5px;">
+                        <option value="contains">İçerir</option>
+                        <option value="exact">Tam Kelime</option>
+                      </select>
+                      <select class="form-input" id="new-banned-action" style="font-size: 11.5px;">
+                        <option value="warn">Uyarı</option>
+                        <option value="mute_1h">1 Sa Sustur</option>
+                        <option value="mute_3h">3 Sa Sustur</option>
+                      </select>
+                      <button type="button" class="btn btn-primary btn-sm" id="btn-add-banned-word">Ekle</button>
+                    </div>
+
+                    <div style="max-height: 200px; overflow-y: auto;">
+                      <table class="kvkk-rules-table" style="font-size: 11.5px;">
+                        <thead>
+                          <tr>
+                            <th>Kelime</th>
+                            <th>Eşleşme</th>
+                            <th>Aksiyon</th>
+                            <th style="text-align: right;">Sil</th>
+                          </tr>
+                        </thead>
+                        <tbody id="trainer-banned-words-tbody">
+                          <!-- Rendered by chatbot-trainer.js -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Cezalı Kullanıcılar (3 Saat Cooldown) -->
+                <div class="panel-card" style="border: 1px solid #fed7aa; background: #fffaf5;">
+                  <div class="panel-card-header" style="background: #ffedd5; border-bottom: 1px solid #fed7aa;">
+                    <div>
+                      <h3 style="font-size: 15px; font-weight: 700; color: #9a3412;">Cezalı Kullanıcılar (3 Saat Cooldown)</h3>
+                      <p style="font-size: 12px; color: #c2410c;">Güvenlik nedeniyle susturulmuş kullanıcılar ve kalan süreler</p>
+                    </div>
+                    <span class="badge badge-warning" id="trainer-blocked-count-badge">0 Cezalı</span>
+                  </div>
+                  <div class="panel-card-body" style="max-height: 180px; overflow-y: auto;">
+                    <table class="kvkk-rules-table" style="font-size: 11.5px;">
+                      <thead>
+                        <tr>
+                          <th>Kullanıcı</th>
+                          <th>Spam</th>
+                          <th>Kalan Süre</th>
+                          <th style="text-align: right;">Engeli Kaldır</th>
+                        </tr>
+                      </thead>
+                      <tbody id="trainer-blocked-users-tbody">
+                        <!-- Rendered by chatbot-trainer.js -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
     </div>
   </main>
 </div>
@@ -776,6 +1343,123 @@
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- MODAL: YENİ LLM MODELİ EKLE (MODEL STUDIO)                  -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-add-model">
+  <div class="modal-card" style="max-width: 550px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:16px; font-weight:700;">Yeni LLM Modeli Tanımla</h3>
+      <button class="btn-icon" id="btn-close-model-modal" style="width:32px; height:32px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <form id="form-add-model" style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Görünen Model İsmi</label>
+        <input type="text" class="form-input" id="new-model-name" placeholder="Örn: Gemini 2.0 Flash Experimental" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Sağlayıcı (Provider)</label>
+          <select class="form-input" id="new-model-provider">
+            <option value="google">Google AI Studio</option>
+            <option value="openrouter">OpenRouter API</option>
+            <option value="ollama">Yerel Ollama ($0)</option>
+            <option value="heuristic">Heuristik NLP ($0)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Model Kodu (API ID)</label>
+          <input type="text" class="form-input" id="new-model-code" placeholder="Örn: gemini-2.0-flash" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Sıcaklık (0.0 - 1.0)</label>
+          <input type="number" class="form-input" id="new-model-temp" value="0.1" min="0" max="1" step="0.05">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Maks. Token Limiti</label>
+          <input type="number" class="form-input" id="new-model-tokens" value="1024" min="256" max="8192">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Özel Sistem Talimatı (İsteğe Bağlı)</label>
+        <textarea class="form-input" id="new-model-prompt" rows="3" style="font-size:12px;" placeholder="Bu modele özgü ek kurallar..."></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button type="submit" class="btn btn-primary">
+          Modeli Kaydet
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- MODAL: YENİ KÜTÜPHANE / RAG BELGESİ EKLE                     -->
+<!-- ============================================================ -->
+<div class="modal-overlay" id="modal-add-knowledge">
+  <div class="modal-card" style="max-width: 600px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h3 style="font-size:16px; font-weight:700;">Yeni Kütüphane / Kaynak Belgesi Ekle (RAG)</h3>
+      <button class="btn-icon" id="btn-close-knowledge-modal" style="width:32px; height:32px;">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <form id="form-add-knowledge" style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Belge Başlığı</label>
+        <input type="text" class="form-input" id="new-doc-title" placeholder="Örn: Demirdöküm Kombi Bakım Kılavuzu" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Kaynak Türü</label>
+          <select class="form-input" id="new-doc-type">
+            <option value="pdf_text">Manuel PDF Metni</option>
+            <option value="url_text">Harici Web Linki / URL Metni</option>
+            <option value="faq">Sıkça Sorulan Sorular (FAQ)</option>
+            <option value="manual">Dahili Servis Kılavuzu</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span>Kaynak Referansı / Link</span>
+            <button type="button" id="btn-fetch-url-content" class="btn btn-outlined btn-sm" style="font-size:10px; padding:1px 6px; height:22px;">
+              🌐 Web'den İçeriği Çek
+            </button>
+          </label>
+          <input type="text" class="form-input" id="new-doc-source" placeholder="Örn: https://hizmetkombiservis.com/garanti">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Belge / Bilgi İçeriği (Modele Aktarılacak Metin)</label>
+        <textarea class="form-input" id="new-doc-content" rows="6" style="height:auto; padding:10px 14px; font-size:12.5px; line-height:1.4;" placeholder="PDF'ten kopyalanan metin veya web sayfası içeriğini buraya yapıştırınız..." required></textarea>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <input type="checkbox" id="new-doc-active" checked style="width: 16px; height: 16px;">
+        <label for="new-doc-active" style="font-size: 13px; font-weight: 500;">Bu belgeyi hemen aktif LLM bağlamına (context) dahil et</label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+        <button type="submit" class="btn btn-primary">
+          Belgeyi Kaydet & Bağlama Ekle
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Scripts -->
 <script src="js/app.js"></script>
 <script src="js/live-chat.js"></script>
@@ -783,6 +1467,7 @@
 <script src="js/cto-chat.js"></script>
 <script src="js/calendar-view.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/chatbot-trainer.js"></script>
 
 </body>
 </html>

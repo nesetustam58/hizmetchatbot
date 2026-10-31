@@ -9,10 +9,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { initDatabase, CustomerRepo, MessageRepo, TechnicianRepo, AppointmentRepo, KVKKRepo, SettingsRepo, DB } from './database/db.js';
+// Node.js dahili ortam değişkeni yükleyicisi (.env)
+try {
+  if (process.loadEnvFile && fs.existsSync('.env')) {
+    process.loadEnvFile();
+  }
+} catch (e) {
+  // .env yoksa veya önceden yüklendiyse devam et
+}
+
+import { initDatabase, CustomerRepo, MessageRepo, TechnicianRepo, AppointmentRepo, KVKKRepo, SettingsRepo, ChatbotSettingsRepo, ChatbotKnowledgeRepo, ModelRepo, PersonaRepo, LocalizationRepo, SuggestionRepo, DB } from './database/db.js';
 import { processCustomerMessage, handlePaymentCompletedWebhook } from './core/state-machine.js';
 import { CalendarEngine } from './adapters/calendar/calendar-adapter.js';
 import { LLMEngine } from './adapters/llm/llm-adapter.js';
+import { ChannelRouter } from './adapters/channel/channel-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -317,22 +327,90 @@ const server = http.createServer(async (req, res) => {
     // --------------------------------------------------------------------------
     // 6.5 n8n OTOMASYON & GEMINI 3.8 FLASH REST API KÖPRÜSÜ
     // --------------------------------------------------------------------------
-    if (pathname === '/api/n8n/message-in' && method === 'POST') {
+    const isMessageInRoute = (
+      pathname === '/api/n8n/message-in' ||
+      pathname === '/webhook/whatsapp-inbound' ||
+      pathname === '/api/webhook/whatsapp-inbound' ||
+      pathname === '/api/message-in' ||
+      pathname === '/message-in' ||
+      pathname === '/api/webhook/telegram' ||
+      pathname === '/webhook/telegram'
+    );
+
+    if (isMessageInRoute && method === 'GET') {
+      sendJson(res, 200, {
+        status: 'ok',
+        endpoint: pathname,
+        n8nWebhookUrl: process.env.N8N_WEBHOOK_URL || 'https://nesetustam.app.n8n.cloud/webhook/whatsapp-inbound',
+        message: 'HizmetChatbot Message-In Webhook Köprüsü Dinlemede'
+      });
+      return;
+    }
+
+    if (isMessageInRoute && method === 'POST') {
       const body = await parseJsonBody(req);
-      const phone = body.phoneNumber || body.phone || body.from;
-      const text = body.text || body.message || '';
+      
+      // WhatsApp, Telegram, n8n esnek gövde ayrıştırması
+      const tgMsg = (body.message && typeof body.message === 'object') ? body.message : (body.edited_message && typeof body.edited_message === 'object' ? body.edited_message : null);
+      
+      let phone = body.phoneNumber || body.phone || body.from || body.sender || body.number || body.chatId || body.chat_id;
+      let text = (typeof body.text === 'string' ? body.text : '') || (typeof body.message === 'string' ? body.message : '') || (typeof body.body === 'string' ? body.body : '');
+      let channel = body.channel;
+
+      // Telegram Webhook formatı desteği: { message: { chat: { id }, text } }
+      if (tgMsg) {
+        const tgChatId = tgMsg.chat?.id || tgMsg.from?.id;
+        if (tgChatId) {
+          phone = phone || `tg_${tgChatId}`;
+        }
+        text = text || tgMsg.text || tgMsg.caption || '';
+        channel = channel || 'telegram';
+      }
+
+      // WhatsApp Baileys / Evolution API webhook formatı
+      if (body.data && typeof body.data === 'object') {
+        const d = body.data;
+        phone = phone || d.key?.remoteJid || d.from || d.sender;
+        text = text || d.message?.conversation || d.message?.extendedTextMessage?.text || '';
+        channel = channel || 'whatsapp';
+      }
+
+      // Otomatik kanal tespiti
+      if (!channel) {
+        if (String(phone).startsWith('tg_') || body.chat_id || body.chatId || tgMsg) {
+          channel = 'telegram';
+        } else {
+          channel = 'whatsapp';
+        }
+      }
 
       if (!phone || !text) {
-        sendJson(res, 400, { error: 'phoneNumber ve text alanları zorunludur' });
+        sendJson(res, 400, {
+          error: 'phoneNumber/chatId ve text alanları zorunludur',
+          received: { phone, text, channel }
+        });
         return;
       }
 
-      const flowResult = await processCustomerMessage(phone, text, body.channel || 'whatsapp');
+      const flowResult = await processCustomerMessage(phone, text, channel);
+
+      // Telegram üzerinden gelen mesajlara otomatik bot yanıtı ilet
+      if (channel === 'telegram') {
+        const tgAdapter = ChannelRouter.getAdapter('telegram');
+        const rawChatId = String(phone).replace(/^tg_/, '');
+        if (tgAdapter && flowResult.replyText) {
+          await tgAdapter.sendMessage(rawChatId, flowResult.replyText).catch(err => {
+            console.warn('[Telegram Outbound Error]:', err.message);
+          });
+        }
+      }
+
       sendJson(res, 200, {
         success: true,
         replyText: flowResult.replyText,
         currentStep: flowResult.currentStep,
         customerId: phone,
+        channel,
         metadata: flowResult.metadata || {}
       });
       return;
@@ -387,7 +465,8 @@ const server = http.createServer(async (req, res) => {
         
         // Kanal Ayarları
         waMode: saved.waMode || process.env.DEFAULT_CHANNEL || 'webhook',
-        waEndpoint: saved.waEndpoint || 'http://localhost:8080/webhook',
+        waEndpoint: saved.waEndpoint || process.env.WHATSAPP_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || 'https://nesetustam.app.n8n.cloud/webhook/whatsapp-inbound',
+        n8nWebhookUrl: saved.n8nWebhookUrl || process.env.N8N_WEBHOOK_URL || 'https://nesetustam.app.n8n.cloud/webhook/whatsapp-inbound',
         telegramToken: saved.telegramToken ? '••••••••:AA••••••••' : (process.env.TELEGRAM_BOT_TOKEN ? '••••••••' : ''),
 
         // Usta Takvimi & Google Calendar Slot Ayarları
@@ -439,6 +518,375 @@ const server = http.createServer(async (req, res) => {
         technicians: syncCheck.technicians,
         conflicts: syncCheck.conflictCount
       });
+      return;
+    }
+
+    // --------------------------------------------------------------------------
+    // 7.5 CHATBOT EĞİTİCİ & PERSONA & GÜVENLİK AYARLARI API
+    // --------------------------------------------------------------------------
+    if (pathname === '/api/chatbot-trainer/settings' && method === 'GET') {
+      const allSettings = ChatbotSettingsRepo.getAll();
+      sendJson(res, 200, {
+        settings: {
+          systemPrompt: allSettings.system_prompt?.value || '',
+          bannedWords: allSettings.banned_words_matrix?.value || [],
+          spamTriggers: allSettings.spam_trigger_words?.value || [],
+          offTopicRedirectMessage: allSettings.off_topic_redirect_message?.value || '',
+          cooldownPenaltyMessage: allSettings.cooldown_penalty_message?.value || '',
+          maxSpamAttempts: parseInt(allSettings.max_spam_attempts?.value || '3', 10) || 3
+        }
+      });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/settings' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (body.systemPrompt !== undefined) {
+        ChatbotSettingsRepo.set('system_prompt', body.systemPrompt, 'persona', 'Gemini 3.8 Flash modelinin baz aldığı ana karakter, kurallar ve dikey kilit metni');
+      }
+      if (body.bannedWords !== undefined) {
+        ChatbotSettingsRepo.setBannedWords(body.bannedWords);
+      }
+      if (body.spamTriggers !== undefined) {
+        ChatbotSettingsRepo.setSpamTriggers(body.spamTriggers);
+      }
+      if (body.offTopicRedirectMessage !== undefined) {
+        ChatbotSettingsRepo.set('off_topic_redirect_message', body.offTopicRedirectMessage, 'messages', 'Kullanıcı konu dışı yazdığında iletilecek kibar yönlendirme mesajı');
+      }
+      if (body.cooldownPenaltyMessage !== undefined) {
+        ChatbotSettingsRepo.set('cooldown_penalty_message', body.cooldownPenaltyMessage, 'messages', '3 saatlik ceza uygulandığında döndürülecek uyarı mesajı');
+      }
+      if (body.maxSpamAttempts !== undefined) {
+        ChatbotSettingsRepo.set('max_spam_attempts', String(body.maxSpamAttempts), 'spam', 'Engelleme öncesi izin verilen maksimum spam/konu dışı mesaj adedi');
+      }
+
+      sendJson(res, 200, {
+        success: true,
+        message: 'Chatbot Eğitici ayarları anında SQLite veritabanına kaydedildi ve LLM katmanına yansıtıldı.'
+      });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/knowledge' && method === 'GET') {
+      const modelId = parsedUrl.searchParams.get('modelId');
+      const docs = ChatbotKnowledgeRepo.getAll(modelId);
+      sendJson(res, 200, { documents: docs });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/knowledge' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.title || !body.content) {
+        sendJson(res, 400, { error: 'Başlık (title) ve içerik (content) alanları zorunludur' });
+        return;
+      }
+      const newDoc = ChatbotKnowledgeRepo.create({
+        title: body.title,
+        type: body.type || 'manual',
+        source: body.source || '',
+        content: body.content,
+        isActive: body.isActive !== undefined ? body.isActive : 1
+      });
+      sendJson(res, 201, { success: true, document: newDoc });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/knowledge/') && pathname.endsWith('/toggle') && method === 'POST') {
+      const parts = pathname.split('/');
+      const docId = parts[4];
+      const updated = ChatbotKnowledgeRepo.toggleActive(docId);
+      if (!updated) {
+        sendJson(res, 404, { error: 'Belge bulunamadı' });
+        return;
+      }
+      sendJson(res, 200, { success: true, updated });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/knowledge/') && (method === 'PUT' || method === 'POST')) {
+      const parts = pathname.split('/');
+      const docId = parts[4];
+      const body = await parseJsonBody(req);
+      const updated = ChatbotKnowledgeRepo.update(docId, body);
+      if (!updated) {
+        sendJson(res, 404, { error: 'Belge bulunamadı' });
+        return;
+      }
+      sendJson(res, 200, { success: true, document: updated });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/knowledge/') && method === 'DELETE') {
+      const parts = pathname.split('/');
+      const docId = parts[4];
+      ChatbotKnowledgeRepo.delete(docId);
+      sendJson(res, 200, { success: true, message: 'Belge başarıyla silindi' });
+      return;
+    }
+
+    // Harici URL'den İçeriği Otomatik Çekme (Web Scraper Lite)
+    if (pathname === '/api/chatbot-trainer/fetch-url' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.url) {
+        sendJson(res, 400, { error: 'url parametresi zorunludur' });
+        return;
+      }
+      const fetchResult = await ChatbotKnowledgeRepo.fetchUrlContent(body.url);
+      if (!fetchResult.success) {
+        sendJson(res, 400, { error: fetchResult.error || 'URL içeriği çekilemedi' });
+        return;
+      }
+      sendJson(res, 200, fetchResult);
+      return;
+    }
+
+    // White-Label Profil API
+    if (pathname === '/api/chatbot-trainer/whitelabel' && method === 'GET') {
+      const profile = ChatbotSettingsRepo.getWhiteLabelProfile();
+      sendJson(res, 200, { profile });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/whitelabel' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      ChatbotSettingsRepo.setWhiteLabelProfile(body);
+      sendJson(res, 200, { success: true, message: 'White-Label marka profili güncellendi.' });
+      return;
+    }
+
+    // Token Koruma ve Güvenlik Telemetrisi (Token Shield Stats)
+    if (pathname === '/api/chatbot-trainer/shield-stats' && method === 'GET') {
+      const stats = ChatbotSettingsRepo.getShieldStats();
+      sendJson(res, 200, { stats });
+      return;
+    }
+
+    // --------------------------------------------------------------------------
+    // MODEL STUDIO & ÇOKLU MODEL YÖNETİMİ API
+    // --------------------------------------------------------------------------
+    if (pathname === '/api/chatbot-trainer/models' && method === 'GET') {
+      const models = ModelRepo.getAll();
+      const active = ModelRepo.getActive();
+      sendJson(res, 200, { models, activeModelId: active ? active.id : null });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/models/') && pathname.endsWith('/activate') && method === 'POST') {
+      const parts = pathname.split('/');
+      const modelId = parts[4];
+      const activated = ModelRepo.setActive(modelId);
+      sendJson(res, 200, { success: true, activeModel: activated });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/models' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.name || !body.provider || !body.modelCode) {
+        sendJson(res, 400, { error: 'name, provider ve modelCode zorunludur' });
+        return;
+      }
+      const created = ModelRepo.create(body);
+      sendJson(res, 201, { success: true, model: created });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/models/') && (method === 'PUT' || method === 'POST')) {
+      const parts = pathname.split('/');
+      const modelId = parts[4];
+      const body = await parseJsonBody(req);
+      const updated = ModelRepo.update(modelId, body);
+      sendJson(res, 200, { success: true, model: updated });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/models/') && method === 'DELETE') {
+      const parts = pathname.split('/');
+      const modelId = parts[4];
+      try {
+        ModelRepo.delete(modelId);
+        sendJson(res, 200, { success: true, message: 'Model silindi' });
+      } catch (err) {
+        sendJson(res, 400, { error: err.message });
+      }
+      return;
+    }
+
+    // --------------------------------------------------------------------------
+    // KÜLTÜREL YERELLEŞTİRME & ŞİVE / DEYİM API (Localization & Cultural NLP)
+    // --------------------------------------------------------------------------
+    if (pathname === '/api/chatbot-trainer/localization' && method === 'GET') {
+      const lang = parsedUrl.searchParams.get('lang') || 'tr';
+      const modelId = parsedUrl.searchParams.get('modelId');
+      const rules = LocalizationRepo.getAll(lang, modelId);
+      sendJson(res, 200, { rules, lang, modelId });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/localization' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.phrase || !body.responseGuideline) {
+        sendJson(res, 400, { error: 'phrase ve responseGuideline zorunludur' });
+        return;
+      }
+      const created = LocalizationRepo.create(body);
+      sendJson(res, 201, { success: true, rule: created });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/localization/') && pathname.endsWith('/toggle') && method === 'POST') {
+      const parts = pathname.split('/');
+      const ruleId = parts[4];
+      const toggled = LocalizationRepo.toggleStatus(ruleId);
+      sendJson(res, 200, { success: true, rule: toggled });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/localization/') && method === 'DELETE') {
+      const parts = pathname.split('/');
+      const ruleId = parts[4];
+      LocalizationRepo.delete(ruleId);
+      sendJson(res, 200, { success: true, message: 'Kural silindi' });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/localization/scan' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const scanResult = LocalizationRepo.simulateCulturalScan(body.source || 'Web & Sosyal Medya Diyalog Taraması');
+      sendJson(res, 200, { success: true, scanResult });
+      return;
+    }
+
+    // --------------------------------------------------------------------------
+    // EĞİTİM DURUMU & ONAY KUYRUĞU API (Auto-Training & Feedback Loop)
+    // --------------------------------------------------------------------------
+    if (pathname === '/api/chatbot-trainer/training-status' && method === 'GET') {
+      const modelId = parsedUrl.searchParams.get('modelId');
+      const metrics = SuggestionRepo.getTrainingMetrics(modelId);
+      sendJson(res, 200, { metrics });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/suggestions' && method === 'GET') {
+      const status = parsedUrl.searchParams.get('status') || 'all';
+      const modelId = parsedUrl.searchParams.get('modelId');
+      const suggestions = SuggestionRepo.getAll(status, modelId);
+      sendJson(res, 200, { suggestions });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/suggestions/') && pathname.endsWith('/approve') && method === 'POST') {
+      const parts = pathname.split('/');
+      const suggId = parts[4];
+      const result = SuggestionRepo.approve(suggId);
+      sendJson(res, 200, { success: true, result });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/suggestions/') && pathname.endsWith('/reject') && method === 'POST') {
+      const parts = pathname.split('/');
+      const suggId = parts[4];
+      const result = SuggestionRepo.reject(suggId);
+      sendJson(res, 200, { success: true, result });
+      return;
+    }
+
+    // --------------------------------------------------------------------------
+    // MÜŞTERİ PERSONA PAKETLERİ API (Empathy & Tone Matching)
+    // --------------------------------------------------------------------------
+    if (pathname === '/api/chatbot-trainer/personas' && method === 'GET') {
+      const modelId = parsedUrl.searchParams.get('modelId');
+      const personas = PersonaRepo.getAll(modelId);
+      sendJson(res, 200, { personas });
+      return;
+    }
+
+    if (pathname.startsWith('/api/chatbot-trainer/personas/') && (method === 'PUT' || method === 'POST')) {
+      const parts = pathname.split('/');
+      const personaKey = parts[4];
+      const body = await parseJsonBody(req);
+      const updated = PersonaRepo.update(personaKey, body);
+      sendJson(res, 200, { success: true, persona: updated });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/detect-persona' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const msg = body.message || '';
+      const detected = LLMEngine.detectCustomerPersona(msg);
+      const personaPack = PersonaRepo.getByKey(detected.persona);
+      sendJson(res, 200, {
+        success: true,
+        detectedPersona: detected.persona,
+        confidence: detected.confidence,
+        personaPack
+      });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/test-intent' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      const testMessage = body.message || '';
+      if (!testMessage.trim()) {
+        sendJson(res, 400, { error: 'Test edilecek mesaj zorunludur' });
+        return;
+      }
+
+      const start = Date.now();
+      // 1. Önce Heuristik Güvenlik & Spam Filtresini Test Et
+      const securityResult = LLMEngine.checkSecurityAndFilter(testMessage);
+
+      // 2. Ardından Niyet Sınıflandırma ve Varlık Çıkarımını Çalıştır
+      const intentResult = await LLMEngine.classifyIntentAndExtract(testMessage);
+      const latencyMs = Date.now() - start;
+
+      sendJson(res, 200, {
+        success: true,
+        latencyMs,
+        testMessage,
+        securityCheck: securityResult,
+        intentResult,
+        actionRecommendation: securityResult.matched 
+          ? `GÜVENLİK KALKANI: ${securityResult.action || 'off_topic_redirect'} (Token Harcanmaz)`
+          : (intentResult.offTopicDetected ? 'KONU DIŞI: Kibar Yönlendirme Mesajı' : 'GEÇERLİ NİYET: Servis Randevu Akışı')
+      });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/blocked-users' && method === 'GET') {
+      const allCustomers = CustomerRepo.getAll();
+      const now = Date.now();
+      const list = allCustomers
+        .map(c => {
+          const isBlocked = c.is_blocked_until && new Date(c.is_blocked_until).getTime() > now;
+          const remainingMinutes = isBlocked ? Math.ceil((new Date(c.is_blocked_until).getTime() - now) / 60000) : 0;
+          return {
+            id: c.id,
+            phone: c.phone_number,
+            name: c.full_name || 'İsimsiz Müşteri',
+            channel: c.channel,
+            isBlocked,
+            blockedUntil: c.is_blocked_until,
+            remainingMinutes,
+            spamCount: c.spam_count || 0,
+            warningCount: c.warning_count || 0,
+            lastIntent: c.last_intent || 'belirtilmedi',
+            updatedAt: c.updated_at
+          };
+        })
+        .filter(c => c.isBlocked || c.spamCount > 0 || c.warningCount > 0);
+
+      sendJson(res, 200, { blockedUsers: list });
+      return;
+    }
+
+    if (pathname === '/api/chatbot-trainer/unblock-user' && method === 'POST') {
+      const body = await parseJsonBody(req);
+      if (!body.customerId) {
+        sendJson(res, 400, { error: 'customerId alanı zorunludur' });
+        return;
+      }
+      CustomerRepo.unblockUser(body.customerId);
+      sendJson(res, 200, { success: true, message: 'Kullanıcının engeli kaldırıldı ve sayaçları sıfırlandı.' });
       return;
     }
 
@@ -499,6 +947,11 @@ const server = http.createServer(async (req, res) => {
     // --------------------------------------------------------------------------
     if (pathname === '/pay' || pathname.startsWith('/pay/')) {
       serveStaticFile(res, '/pay.html');
+      return;
+    }
+
+    if (pathname === '/admin/chatbot-trainer' || pathname === '/chatbot-trainer' || pathname === '/admin' || pathname === '/admin/') {
+      serveStaticFile(res, '/index.html');
       return;
     }
 
