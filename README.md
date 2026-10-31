@@ -278,3 +278,4 @@ Tarayıcınızda `http://localhost:3000` adresine giderek Admin Dashboard'u heme
 - **Lisans:** MIT (Tamamen ücretsiz ve açık kaynak).
 - **Veri Saklama:** Müşteri verileri şifrelenmiş diskte (SQLite AES / SQLCipher uyumlu) tutulur.
 - **Log Temizliği:** KVKK gereği 12 aydan eski tamamlanmış sohbet logları otomatik arşivlenir/anonimleştirilir.
+# Hizmet Chatbot Project
